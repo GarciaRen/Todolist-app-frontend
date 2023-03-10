@@ -1,48 +1,120 @@
-import React from "react";
+import { React, useState } from "react";
+import { SuccessToast, ErrorToast } from "./Toast";
+import { useTodoStore } from "../store/todoStore";
+import { postRouteApi, putRouteApi } from "../API/services";
 
-const modal = (props) => {
-  const { cancelButton, handleOnChange, todo, createTodo, newTask } = props;
+const Modal = ({ type, _id }) => {
+  const { addModal, handleAddModal, getTodoData, handleEditModal, editModal } =
+    useTodoStore((state) => state);
+  const [value, setValue] = useState("");
+  const [error, setError] = useState("");
+
+  const params = {
+    todoName: value,
+  };
+
+  // Create todo task
+  const createTodo = async (e) => {
+    e.preventDefault();
+    const isValid = formValidation();
+
+    if (isValid && addModal) {
+      await postRouteApi("/todos", params)
+        .then((res) => {
+          if (res.status === 201) {
+            const {
+              data: { message },
+            } = res;
+            getTodoData();
+            handleAddModal();
+            return SuccessToast(message);
+          }
+        })
+        .catch((error) => {
+          return ErrorToast(error.message);
+        });
+    }
+    if (isValid && editModal) {
+      await putRouteApi(`/todos/${_id}`, params)
+        .then((res) => {
+          if (res.status === 201) {
+            const {
+              data: { message },
+            } = res;
+            getTodoData();
+            handleEditModal(false);
+            return SuccessToast(message);
+          }
+        })
+        .catch((error) => {
+          return ErrorToast(error.message);
+        });
+    }
+  };
+
+  // Cancel button
+  const cancelButton = () => {
+    handleAddModal(false);
+    handleEditModal(false);
+  };
+
+  // Form validation
+  const formValidation = () => {
+    let err = "";
+    let isValid = true;
+
+    if (!value.length) {
+      err = "*Required Field";
+      isValid = false;
+    }
+
+    setError(err);
+    return isValid;
+  };
 
   return (
     <>
-      <div
+      <form
         className="relative z-10"
         aria-labelledby="modal-title"
         role="dialog"
         aria-modal="true"
+        onSubmit={createTodo}
       >
         <div className="fixed inset-0 bg-gray-500 bg-opacity-50 transition-opacity"></div>
 
-        <div className="fixed inset-0 z-10 overflow-y-auto">
-          <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-            <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+        <div className="fixed inset-0 z-10 overflow-y-auto ">
+          <div className="flex min-h-full items-center justify-center p-4 text-center">
+            <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all md:w-[600px]">
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 flex flex-col gap-1">
                 <span className="text-md font-medium ml-1">
-                  {newTask ? "Add Task:" : "Edit Task:"}
+                  {type}
+                  {error && (
+                    <span className="text-red-600 text-xs ml-1">{error}</span>
+                  )}
                 </span>{" "}
                 <div className="sm:flex sm:items-start">
                   <input
-                    onChange={handleOnChange}
+                    onChange={(e) => setValue(e.target.value)}
                     type="text"
-                    value={todo}
+                    value={value}
                     name="todo"
-                    required
                     className="w-full border-[2px] border-violet-500 rounded-md focus:border-violet-500 focus:ring-0"
                   ></input>
                 </div>
               </div>
-              <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+              <div className="bg-gray-50 px-4 py-3 flex gap-3 justify-center md:justify-end">
                 <button
-                  onClick={createTodo}
-                  type="button"
-                  className="inline-flex w-full justify-center rounded-md border border-transparent bg-violet-500 px-4 py-2 text-base font-medium text-white shadow-sm  sm:ml-3 sm:w-auto sm:text-sm"
+                  onSubmit={createTodo}
+                  type="submit"
+                  className="inline-flex w-full justify-center rounded-md border border-transparent bg-violet-500 px-4 py-2 text-base font-medium text-white shadow-sm  "
                 >
-                  {newTask ? "Add" : "Save"}
+                  {addModal ? "Add" : "Save"}
                 </button>
                 <button
-                  onClick={() => cancelButton()}
+                  onClick={cancelButton}
                   type="button"
-                  className="inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-100 focus:outline-none focus:ring-0 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  className="inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-100 focus:outline-none focus:ring-0"
                 >
                   Cancel
                 </button>
@@ -50,9 +122,9 @@ const modal = (props) => {
             </div>
           </div>
         </div>
-      </div>
+      </form>
     </>
   );
 };
 
-export default modal;
+export default Modal;

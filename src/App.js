@@ -1,152 +1,55 @@
-import { React, useState } from "react";
+import { React, useEffect } from "react";
 import { FaListAlt } from "react-icons/fa";
 import Modal from "./components/Modal";
 import Todoitem from "./components/Todoitem";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { ToastContainer } from "react-toastify";
+import { useTodoStore } from "./store/todoStore";
+
 const App = () => {
-  const [status, setStatus] = useState(false);
+  // * zustand store
+  const { todoList, getTodoData, addModal, handleAddModal } = useTodoStore(
+    (state) => state
+  );
 
-  const [newTask, setNewTask] = useState(false);
-  const [update, setUpdate] = useState(false);
-
-  const [state, setState] = useState({
-    todo: "",
-    todoList: [],
-  });
-
-  const { todo, todoList } = state || {};
-
-  // onChange func
-  const handleOnChange = (e) => {
-    const { name, value } = e.target;
-    console.log("value", value);
-
-    setState({ ...state, [name]: value });
+  const addModalFunc = () => {
+    return handleAddModal(true);
   };
 
-  // check button func
-  const checkButton = (index) => {
-    const list = todoList;
-    list[index] = { ...list[index], status: !status };
-    setStatus(!status);
-  };
-
-  // modal func
-  const handleNewTask = () => {
-    setNewTask(!newTask);
-    setState({ todo: "", todoList });
-  };
-
-  //cancel button
-  const cancelButton = () => {
-    setNewTask(false);
-    setUpdate(false);
-  };
-
-  const handleUpdate = () => {
-    setUpdate(!update);
-    setState({ todo: "", todoList });
-  };
-
-  // Create todo
-  const createTodo = () => {
-    if (!todo) {
-      return toast.error("Please input field !", {
-        position: "top-right",
-        autoClose: 300,
-        hideProgressBar: true,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
-      });
-    }
-    const list = todoList;
-    list.push({ todo, status: false });
-
-    setNewTask(false);
-    setState({ todo: "", todoList: list });
-    notify();
-  };
-
-  // Delete todo
-  const deleteTodo = (index) => {
-    const list = todoList;
-    list.splice(index, 1);
-
-    setState({ todo: "", todoList: list });
-  };
-
-  // Toast
-  const notify = () =>
-    toast.success("Task Added !", {
-      position: "top-right",
-      autoClose: 300,
-      hideProgressBar: true,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-      theme: "light",
-    });
+  useEffect(() => {
+    getTodoData();
+  }, []);
 
   return (
     <div>
-      <div className="min-h-screen  bg-slate-200">
-        <div className="flex flex-col py-10 mx-80 h-screen">
+      <div className="min-h-screen flex justify-center bg-slate-200">
+        <div className="flex flex-col py-4 h-screen md:w-[650px] w-[300px]">
           <div className="p-4 bg-violet-500/90 flex justify-center items-center gap-5 text-white shadow-2xl rounded-md">
-            <FaListAlt className="text-2xl" />
-            <h1 className="text-2xl tracking-wide font-bold ">Todo list App</h1>
+            <FaListAlt className="md:text-2xl text-lg" />
+            <h1 className="md:text-2xl text-md tracking-wide font-bold ">
+              Todo list App
+            </h1>
           </div>
-          <div className="bg-white h-full shadow-2xl rounded-lg py-10 mt-5 flex flex-col gap-3">
+          <div className="bg-white h-full shadow-2xl rounded-lg py-10 mt-5 flex flex-col gap-3 overflow-auto ">
             {todoList.length ? (
-              todoList.map((val, index) => (
-                <Todoitem
-                  key={index}
-                  checkButton={checkButton}
-                  index={index}
-                  val={val.todo}
-                  status={val.status}
-                  deleteTodo={deleteTodo}
-                  handleUpdate={handleUpdate}
-                />
-              ))
+              todoList.map((val, index) => {
+                return <Todoitem val={val} key={index} />;
+              })
             ) : (
-              <span className="text-center text-2xl font-medium text-gray-500">
-                No Task Found
-              </span>
+              <h1 className="text-center md:text-2xl text-md text-gray-500">
+                No Task(s) Found
+              </h1>
             )}
           </div>
           <button
-            onClick={handleNewTask}
-            className="flex p-3 justify-center -mt-8 z-10 mx-auto bg-violet-500 rounded-full w-[200px] gap-2 text-2xl font-medium items-center text-white border-2 border-violet-500 shadow-xl"
+            onClick={addModalFunc}
+            className="flex md:p-3 p-1 justify-center md:-mt-8 -mt-6 z-10 mx-auto bg-violet-500 rounded-full w-[200px] gap-2 md:text-2xl text-md font-medium items-center text-white border-2 border-violet-500 shadow-xl hover:bg-violet-400 hover:border-violet-400 "
           >
             <span className="text-3xl font-bold">+</span> New Task
           </button>
-          {newTask ? (
-            <Modal
-              cancelButton={cancelButton}
-              handleOnChange={handleOnChange}
-              todo={todo}
-              createTodo={createTodo}
-              newTask={newTask}
-            />
-          ) : null}
-          {update ? (
-            <Modal
-              cancelButton={cancelButton}
-              handleOnChange={handleOnChange}
-              todo={todo}
-              createTodo={createTodo}
-              newTask={newTask}
-            />
-          ) : null}
-
-          <ToastContainer />
+          {addModal && <Modal type={"Add Todo"} />}
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };
