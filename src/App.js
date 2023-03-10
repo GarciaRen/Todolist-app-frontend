@@ -17,7 +17,7 @@ const App = () => {
 
   useEffect(() => {
     getTodoData();
-  }, []);
+  }, [getTodoData]);
 
   return (
     <div>
